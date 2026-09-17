@@ -1,93 +1,50 @@
-# CareerTrack
+# Box Packaging Plant
 
-A dashboard for tracking internship and job applications, with an AI-powered
-resume analyzer that compares your resume against a job description.
+An automated box packaging line built and simulated in **OpenPLC Editor**, using ladder logic to control the fill, verify, seal, and discharge process for boxes on a production line.
 
-**Live demo:** [add your deployed frontend link here]
-**Backend API:** [add your deployed backend link here]
+## Overview
 
-<!-- Add a screenshot once the UI is deployed, e.g.: -->
-<!-- ![CareerTrack dashboard](./screenshot.png) -->
+The system is controlled through 5 ladder logic rungs, each handling a specific stage of the packaging process:
 
-## Features
+### 1. Start_Stop_System
+A safety-interlocked start/stop circuit.
+- `Emergency_Stop_Button` and `Stop_Button` can shut the system down instantly.
+- `Start_Button` engages the system, with a seal-in/latching branch so it stays running after the button is released.
+- A 3-second `TON` (Timer On Delay) confirms the machine has started before activating the `LED` status indicator.
 
-- Track applications through a five-stage pipeline: Applied → Online
-  Assessment → Interview → Selected / Rejected
-- Dashboard with response rate, interview rate, and offer rate
-- "Still in play" view of everything currently in Assessment or Interview
-- Search applications by company or position
-- AI resume analyzer: paste a resume and a job description, get a match
-  score, matching/missing skills, and improvement suggestions (powered by
-  the Gemini API)
+### 2. Motor1_Signal
+Once the system is running (`LED` active) and both `Filling_Process` and `Linear_actuator` are idle, `Motor_1` runs — driving the main conveyor that moves boxes into the filling station.
 
-## Tech stack
+### 3. Proximity_Sensor_Triggering_for_Filling_Process
+When `P_Sensor` detects a box in position, a 10-second pulse timer (`TP`) activates `Filling_Process` — the timed window during which the box is filled.
 
-**Frontend:** HTML, CSS, vanilla JavaScript
-**Backend:** Node.js, Express
-**Database:** MongoDB
-**AI:** Google Gemini API (`@google/genai`)
+### 4. Camera_Sensor_To_Verify_Packaging
+`C_Sensor` (camera) verifies the box is `Semi_Filled`, then triggers a 5-second pulse on the `Linear_actuator` — sealing or advancing the box to the next stage.
 
-## Running it locally
+### 5. Motor2_Signal
+Once the `Linear_actuator` fires, it triggers `Motor_2` via another pulse timer, moving the sealed box off the line to the output conveyor.
 
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
-```
-
-### 2. Backend setup
-
-```bash
-npm install
-```
-
-Copy `.env.example` to `.env` and fill in your own values:
-
-```bash
-cp .env.example .env
-```
+## Project Structure
 
 ```
-MONGODB_URI=your_mongodb_connection_string
-GEMINI_API_KEY=your_gemini_api_key
+Box Packaging Plant/
+├── devices/       # Device configuration and pin mapping
+├── pous/          # Program Organization Units (ladder logic)
+├── media/         # Demo video of the working project
+├── project.json   # Main OpenPLC project file
+└── README.md
 ```
 
-Start the backend:
+## Demo Video
 
-```bash
-node server.js
-```
+A working demo of the full packaging cycle is available in the `media/` folder: `Box Packaging Plant.mp4`
 
-You should see `MongoDB connected successfully!` and `CareerTrack server
-running on http://localhost:5001` in the terminal.
+## Tools Used
 
-### 3. Frontend setup
+- [OpenPLC Editor](https://autonomylogic.com/) — used for PLC programming (ladder logic)
 
-The frontend is static — no build step. Just open `index.html` in a
-browser, or serve it locally, e.g.:
+## How to Open
 
-```bash
-npx serve .
-```
-
-## API reference
-
-| Method | Endpoint                    | Description                        |
-| ------ | ---------------------------- | ----------------------------------- |
-| GET    | `/api/applications`          | List all applications               |
-| POST   | `/api/applications`          | Add a new application               |
-| PUT    | `/api/applications/:id`      | Update an application's status      |
-| DELETE | `/api/applications/:id`      | Delete an application                |
-| POST   | `/api/ai/analyze`            | Analyze a resume against a job description |
-
-## Future improvements
-
-- Rate limiting on the AI analyze endpoint
-- Restrict CORS to the deployed frontend origin only
-- User accounts / authentication for multi-user support
-- Automated tests
-
-## License
-
-MIT
+1. Install [OpenPLC Editor](https://autonomylogic.com/).
+2. Clone this repository.
+3. Open `project.json` in OpenPLC Editor to view and run the ladder logic.
